@@ -94,11 +94,21 @@ export async function getRunStatus(runId: string): Promise<RunStatus> {
 }
 
 // Pull the first video URL out of whatever shape the node output has.
+// Confirmed shapes from the live API: { result: ["<url>", ...] } is the
+// primary shape for seedance-2.0-image-to-video; videoUrl/videoUrls are
+// kept as fallbacks in case other node types use a different key.
 export function extractVideoUrl(output: Record<string, unknown> | undefined): string | null {
   if (!output) return null;
+
+  const result = output.result;
+  if (Array.isArray(result) && typeof result[0] === "string") return result[0];
+  if (typeof result === "string") return result;
+
   const direct = output.videoUrl ?? output.video_url;
   if (typeof direct === "string") return direct;
+
   const arr = output.videoUrls ?? output.video_urls;
   if (Array.isArray(arr) && typeof arr[0] === "string") return arr[0];
+
   return null;
 }
